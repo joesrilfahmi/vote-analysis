@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Users, Building2, Vote } from "lucide-react";
 import Modal from "./Modal";
 import Pagination from "./Pagination";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 const StatCard = ({ icon: Icon, title, value, onClick }) => (
   <div
@@ -38,27 +40,39 @@ const Statistics = ({ stats }) => {
 
     switch (modalType) {
       case "names":
-        data = stats.uniqueNames;
-        return data.filter((name) => name.toLowerCase().includes(query));
+        return stats.uniqueNames.map((name, index) => ({
+          id: index + 1,
+          name,
+          unit:
+            stats.voterDetails[Object.keys(stats.voterDetails)[0]].find(
+              (voter) => voter.nama === name
+            )?.unit || "-",
+        }));
       case "units":
-        data = stats.uniqueUnits;
-        return data.filter((unit) => unit.toLowerCase().includes(query));
-      case "votes":
-        data = Object.entries(stats.voterDetails).flatMap(([vote, voters]) =>
-          voters.map((voter) => ({ ...voter, vote }))
-        );
-        return data.filter(
-          (item) =>
-            item.nama.toLowerCase().includes(query) ||
-            item.unit.toLowerCase().includes(query) ||
-            item.vote.toLowerCase().includes(query)
-        );
+        return stats.uniqueUnits.map((unit, index) => ({
+          id: index + 1,
+          unit,
+        }));
       default:
         return [];
     }
   };
 
-  const filteredData = getFilteredData();
+  const filteredData = getFilteredData().filter((item) => {
+    const query = searchQuery.toLowerCase();
+    switch (modalType) {
+      case "names":
+        return (
+          item.name.toLowerCase().includes(query) ||
+          item.unit.toLowerCase().includes(query)
+        );
+      case "units":
+        return item.unit.toLowerCase().includes(query);
+      default:
+        return true;
+    }
+  });
+
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const currentData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -66,58 +80,60 @@ const Statistics = ({ stats }) => {
   );
 
   const renderModalContent = () => {
+    if (!currentData.length && searchQuery) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          Data yang dicari tidak ditemukan
+        </div>
+      );
+    }
+
     switch (modalType) {
       case "names":
-        return (
-          <div className="space-y-2">
-            {currentData.map((name, index) => (
-              <div
-                key={index}
-                className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                {name}
-              </div>
-            ))}
-          </div>
-        );
-      case "units":
-        return (
-          <div className="space-y-2">
-            {currentData.map((unit, index) => (
-              <div
-                key={index}
-                className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                {unit}
-              </div>
-            ))}
-          </div>
-        );
-      case "votes":
         return (
           <table className="min-w-full">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700">
                 <th className="p-3 text-left">No</th>
-                <th className="p-3 text-left">Timestamp</th>
                 <th className="p-3 text-left">Nama</th>
                 <th className="p-3 text-left">Unit</th>
-                <th className="p-3 text-left">Suara</th>
               </tr>
             </thead>
             <tbody>
               {currentData.map((item, index) => (
                 <tr
-                  key={index}
+                  key={item.id}
                   className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <td className="p-3">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
-                  <td className="p-3">{item.timestamp}</td>
-                  <td className="p-3">{item.nama}</td>
+                  <td className="p-3">{item.name}</td>
                   <td className="p-3">{item.unit}</td>
-                  <td className="p-3">{item.vote}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        );
+      case "units":
+        return (
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-700">
+                <th className="p-3 text-left">No</th>
+                <th className="p-3 text-left">Unit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentData.map((item, index) => (
+                <tr
+                  key={item.id}
+                  className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <td className="p-3">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
+                  <td className="p-3">{item.unit}</td>
                 </tr>
               ))}
             </tbody>
@@ -134,8 +150,6 @@ const Statistics = ({ stats }) => {
         return "Daftar Nama Pemilih";
       case "units":
         return "Daftar Unit";
-      case "votes":
-        return "Detail Suara";
       default:
         return "";
     }
@@ -160,7 +174,6 @@ const Statistics = ({ stats }) => {
           icon={Vote}
           title="Total Suara"
           value={Object.values(stats.voteCount).reduce((a, b) => a + b, 0)}
-          onClick={() => setModalType("votes")}
         />
       </div>
 

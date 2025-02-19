@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
 import React, { useState } from "react";
-import { Sun, Moon, FileDown, HelpCircle, RefreshCw } from "lucide-react";
+import { Sun, Moon, FileDown, HelpCircle, RefreshCw, Home } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Modal from "./Modal";
 import { generateExcelTemplate } from "../utils/excelTemplate";
@@ -23,53 +23,55 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-lg transition-colors duration-200">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            Analisis Suara
-          </h1>
+          <div className="flex items-center space-x-2">
+            <Home className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              Analisis
+            </h1>
+          </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             {hasData && (
               <button
                 onClick={() => setIsResetModalOpen(true)}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Reset Data"
               >
-                <RefreshCw size={20} />
-                <span className="font-medium">Reset</span>
+                <RefreshCw size={20} className="text-red-500" />
               </button>
             )}
 
             <button
               onClick={generateExcelTemplate}
-              className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Download Template"
             >
               <FileDown size={20} />
-              <span className="font-medium">Template</span>
             </button>
 
             <button
               onClick={() => setIsTutorialOpen(true)}
-              className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Tutorial"
             >
               <HelpCircle size={20} />
-              <span className="font-medium">Tutorial</span>
             </button>
 
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
+              title={theme === "dark" ? "Light Mode" : "Dark Mode"}
             >
               {theme === "dark" ? (
                 <Sun size={20} className="text-yellow-400" />
               ) : (
-                <Moon size={20} className="text-gray-600" />
+                <Moon size={20} />
               )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Reset Confirmation Modal */}
       <Modal
         isOpen={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
@@ -94,13 +96,37 @@ const Navbar = () => {
         </div>
       </Modal>
 
-      {/* Tutorial Modal */}
       <Modal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
         title="Cara Menggunakan Analisis Suara"
       >
-        {/* Tutorial content */}
+        <div className="space-y-4">
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold">1. Memulai Analisis</h3>
+            <p>• Download template Excel dengan mengklik icon Download</p>
+            <p>• Isi data sesuai format yang ada pada template</p>
+            <p>• Upload file dengan cara drag & drop atau klik area upload</p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold">2. Format Data</h3>
+            <p>• Timestamp: Waktu pengisian (otomatis)</p>
+            <p>• Nama: Nama pemilih</p>
+            <p>• Unit: Unit/Departemen pemilih</p>
+            <p>
+              • Suara: Pilihan suara (pisahkan dengan koma jika lebih dari satu)
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold">3. Fitur Tersedia</h3>
+            <p>• Visualisasi distribusi suara dalam bentuk pie chart</p>
+            <p>• Detail statistik pemilih dan unit</p>
+            <p>• Daftar lengkap suara per kandidat</p>
+            <p>• Fitur pencarian di setiap daftar</p>
+          </section>
+        </div>
       </Modal>
     </nav>
   );

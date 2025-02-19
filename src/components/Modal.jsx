@@ -8,9 +8,10 @@ const Modal = ({ isOpen, onClose, title, children, searchable, onSearch }) => {
   if (!isOpen) return null;
 
   const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
     if (onSearch) {
-      onSearch(e.target.value);
+      onSearch(value);
     }
   };
 
@@ -23,6 +24,7 @@ const Modal = ({ isOpen, onClose, title, children, searchable, onSearch }) => {
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            aria-label="Close"
           >
             <X size={20} />
           </button>
@@ -46,6 +48,14 @@ const Modal = ({ isOpen, onClose, title, children, searchable, onSearch }) => {
         )}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           {children}
+        </div>
+        <div className="p-4 border-t dark:border-gray-700 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>

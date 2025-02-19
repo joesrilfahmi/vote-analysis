@@ -23,7 +23,10 @@ const Dashboard = () => {
         <div className="animate-fadeIn space-y-8">
           <Statistics stats={stats} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <VoteChart data={stats.votePercentages} />
+            <VoteChart
+              data={stats.voteCount}
+              voterDetails={stats.voterDetails}
+            />
             <VoteList
               voteCount={stats.voteCount}
               voterDetails={stats.voterDetails}

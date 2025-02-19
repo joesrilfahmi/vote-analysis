@@ -1,8 +1,7 @@
-// src/hooks/useExcelData.js
 import { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
-import { format, parseISO } from "date-fns";
+import { parse, format } from "date-fns";
 import { id } from "date-fns/locale";
 
 export const useExcelData = () => {
@@ -11,11 +10,9 @@ export const useExcelData = () => {
   const [hasData, setHasData] = useState(false);
 
   const resetData = useCallback(() => {
-    // Clear all data states
     setData(null);
     setStats(null);
     setHasData(false);
-    // Remove data from localStorage
     localStorage.removeItem("voteData");
   }, []);
 
@@ -26,57 +23,70 @@ export const useExcelData = () => {
           .map((row) => {
             let timestamp;
             try {
-              // First try parsing the Excel date format
+              // Handle different timestamp formats
               if (typeof row.Timestamp === "number") {
-                // Convert Excel serial number to JS date
+                // Handle Excel serial number date
                 const excelDate = XLSX.SSF.parse_date_code(row.Timestamp);
-                timestamp = format(
-                  new Date(
-                    excelDate.y,
-                    excelDate.m - 1,
-                    excelDate.d,
-                    excelDate.H,
-                    excelDate.M,
-                    excelDate.S
-                  ),
-                  "dd/MM/yyyy HH:mm:ss",
-                  { locale: id }
+                timestamp = new Date(
+                  excelDate.y,
+                  excelDate.m - 1,
+                  excelDate.d,
+                  excelDate.H || 0,
+                  excelDate.M || 0,
+                  excelDate.S || 0
                 );
-              } else {
-                // Try parsing as regular date string
-                timestamp = format(
-                  new Date(row.Timestamp),
+              } else if (typeof row.Timestamp === "string") {
+                // Try parsing DD/MM/YYYY HH:mm:ss format
+                timestamp = parse(
+                  row.Timestamp,
                   "dd/MM/yyyy HH:mm:ss",
-                  {
-                    locale: id,
-                  }
+                  new Date()
                 );
-              }
-            } catch (error) {
-              try {
-                // Try parsing as ISO string
-                timestamp = format(
-                  parseISO(row.Timestamp),
-                  "dd/MM/yyyy HH:mm:ss",
-                  {
-                    locale: id,
-                  }
-                );
-              } catch (error) {
-                console.error(`Error parsing timestamp for row:`, row);
-                toast.error(`Format timestamp tidak valid untuk: ${row.Nama}`);
-                return null;
-              }
-            }
 
-            return {
-              timestamp,
-              nama: row.Nama?.trim() || "",
-              unit: row.Unit?.trim() || "",
-              suara: row.Suara?.split(",").map((s) => s.trim()) || [],
-            };
+                // If parsing failed, try other common formats
+                if (isNaN(timestamp.getTime())) {
+                  // Try ISO format
+                  timestamp = new Date(row.Timestamp);
+                }
+              }
+
+              // Validate if timestamp is valid
+              if (isNaN(timestamp.getTime())) {
+                throw new Error("Invalid date");
+              }
+
+              // Format the timestamp consistently
+              const formattedTimestamp = format(
+                timestamp,
+                "dd/MM/yyyy HH:mm:ss",
+                { locale: id }
+              );
+
+              return {
+                timestamp: formattedTimestamp,
+                nama: row.Nama?.trim() || "",
+                unit: row.Unit?.trim() || "",
+                suara: row.Suara
+                  ? row.Suara.split(",").map((s) => s.trim())
+                  : [],
+              };
+            } catch (error) {
+              console.warn(
+                `Warning: Format timestamp tidak valid untuk baris:`,
+                row
+              );
+              // Instead of returning null, try to use the original timestamp string
+              return {
+                timestamp: row.Timestamp || "-",
+                nama: row.Nama?.trim() || "",
+                unit: row.Unit?.trim() || "",
+                suara: row.Suara
+                  ? row.Suara.split(",").map((s) => s.trim())
+                  : [],
+              };
+            }
           })
-          .filter(Boolean); // Remove any null entries
+          .filter((item) => item.nama && item.unit && item.suara.length > 0); // Filter valid entries
 
         if (processedData.length === 0) {
           toast.error("Tidak ada data valid yang dapat diproses");
@@ -94,8 +104,7 @@ export const useExcelData = () => {
     };
 
     if (savedData) {
-      processData(savedData);
-      return;
+      return processData(savedData);
     }
 
     if (!file) return;
@@ -121,21 +130,32 @@ export const useExcelData = () => {
           toast.error("Format file tidak valid. Mohon periksa struktur kolom");
         }
       } catch (error) {
+        console.error("Error processing file:", error);
         toast.error("Error memproses file");
-        console.error(error);
       }
     };
     reader.readAsArrayBuffer(file);
   }, []);
 
   const validateData = (data) => {
-    return data.every(
-      (row) =>
-        row.hasOwnProperty("Timestamp") &&
-        row.hasOwnProperty("Nama") &&
-        row.hasOwnProperty("Unit") &&
-        row.hasOwnProperty("Suara")
+    if (!Array.isArray(data) || data.length === 0) {
+      toast.error("File tidak memiliki data");
+      return false;
+    }
+
+    const requiredColumns = ["Timestamp", "Nama", "Unit", "Suara"];
+    const hasRequiredColumns = requiredColumns.every((column) =>
+      data[0].hasOwnProperty(column)
     );
+
+    if (!hasRequiredColumns) {
+      toast.error(
+        "Format kolom tidak sesuai. Pastikan terdapat kolom: Timestamp, Nama, Unit, dan Suara"
+      );
+      return false;
+    }
+
+    return true;
   };
 
   const calculateStats = (data) => {

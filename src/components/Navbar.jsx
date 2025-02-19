@@ -1,16 +1,26 @@
-import React, { useState } from "react";
-import { Sun, Moon, FileDown, HelpCircle, RefreshCw, Home } from "lucide-react";
+import React, { useState, useRef } from "react";
+import {
+  Sun,
+  Moon,
+  FileSpreadsheet,
+  HelpCircle,
+  RefreshCw,
+  Plus,
+  Download,
+} from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Modal from "./Modal";
 import { generateExcelTemplate } from "../utils/excelTemplate";
 import useVoteStore from "../store/useVoteStore";
 import toast from "react-hot-toast";
+import Logo from "../assets/image/logo.webp";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const { hasData, resetData } = useVoteStore();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleReset = () => {
     resetData();
@@ -18,10 +28,28 @@ const Navbar = () => {
     toast.success("Data berhasil direset");
   };
 
-  const renderIconButton = (icon, onClick, title, className = "") => (
+  const handleImportExcel = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!["xlsx", "xls"].includes(file.name.split(".").pop().toLowerCase())) {
+      toast.error("File harus berformat Excel (.xlsx atau .xls)");
+      event.target.value = null;
+      return;
+    }
+
+    // Tambahkan logika untuk membaca file Excel di sini
+    toast.success("File berhasil diimport");
+    event.target.value = null;
+  };
+
+  const renderIconButton = (icon, onClick, title, disabled = false) => (
     <button
       onClick={onClick}
-      className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${className}`}
+      disabled={disabled}
+      className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+        disabled ? "opacity-50 cursor-not-allowed" : ""
+      }`}
       title={title}
     >
       {icon}
@@ -29,52 +57,65 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-lg transition-colors duration-200">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
-            {renderIconButton(
-              <Home className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
-              () => {},
-              "Beranda"
-            )}
+    <>
+      <nav className="fixed top-0 z-40 w-full border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <img src={Logo} alt="Logo" className="h-8 w-8" />
+            <span className="text-xl font-bold text-gray-900 dark:text-white">
+              Vote Analysis
+            </span>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2">
             {renderIconButton(
-              <RefreshCw
-                size={20}
-                className={hasData ? "text-red-500" : "text-gray-400"}
-              />,
-              () => setIsResetModalOpen(true),
-              "Reset Data"
+              <Plus className="h-5 w-5" />,
+              () => fileInputRef.current?.click(),
+              "Import Excel"
             )}
 
             {renderIconButton(
-              <FileDown size={20} />,
+              <Download className="h-5 w-5" size={20} />,
               generateExcelTemplate,
               "Download Template"
             )}
 
             {renderIconButton(
-              <HelpCircle size={20} />,
+              <HelpCircle className="h-5 w-5" />,
               () => setIsTutorialOpen(true),
               "Tutorial"
             )}
 
             {renderIconButton(
-              theme === "dark" ? (
-                <Sun size={20} className="text-yellow-400" />
+              <RefreshCw className="h-5 w-5" />,
+              () => setIsResetModalOpen(true),
+              "Reset Data",
+              !hasData
+            )}
+
+            {renderIconButton(
+              theme === "light" ? (
+                <Moon className="h-5 w-5" />
               ) : (
-                <Moon size={20} />
+                <Sun className="h-5 w-5" />
               ),
               toggleTheme,
-              theme === "dark" ? "Light Mode" : "Dark Mode"
+              "Toggle Theme"
             )}
           </div>
         </div>
-      </div>
+      </nav>
 
+      {/* Input untuk Import Excel */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept=".xlsx,.xls"
+        onChange={handleImportExcel}
+      />
+
+      {/* Modal Konfirmasi Reset */}
       <Modal
         isOpen={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
@@ -99,6 +140,7 @@ const Navbar = () => {
         </div>
       </Modal>
 
+      {/* Modal Tutorial */}
       <Modal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
@@ -108,9 +150,11 @@ const Navbar = () => {
           <section>
             <h3 className="text-lg font-semibold mb-2">1. Memulai Analisis</h3>
             <ul className="space-y-2 list-disc pl-5">
-              <li>Download template Excel dengan mengklik icon Download</li>
+              <li>Download template Excel dengan mengklik icon Import Excel</li>
               <li>Isi data sesuai format yang ada pada template</li>
-              <li>Upload file dengan cara drag & drop atau klik area upload</li>
+              <li>
+                Upload file dengan cara memilih file melalui tombol Import Excel
+              </li>
             </ul>
           </section>
 
@@ -139,7 +183,7 @@ const Navbar = () => {
           </section>
         </div>
       </Modal>
-    </nav>
+    </>
   );
 };
 

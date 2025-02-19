@@ -1,26 +1,16 @@
-// src/components/Navbar.jsx
 import React, { useState } from "react";
-import {
-  Sun,
-  Moon,
-  FileDown,
-  HelpCircle,
-  RefreshCw,
-  Home,
-  Search,
-} from "lucide-react";
+import { Sun, Moon, FileDown, HelpCircle, RefreshCw, Home } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Modal from "./Modal";
 import { generateExcelTemplate } from "../utils/excelTemplate";
-import { useExcelData } from "../hooks/useExcelData";
+import useVoteStore from "../store/useVoteStore";
 import toast from "react-hot-toast";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
-  const { resetData, hasData } = useExcelData();
+  const { hasData, resetData } = useVoteStore();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleReset = () => {
     resetData();
@@ -28,58 +18,63 @@ const Navbar = () => {
     toast.success("Data berhasil direset");
   };
 
+  const renderIconButton = (icon, onClick, title, className = "") => (
+    <button
+      onClick={onClick}
+      className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${className}`}
+      title={title}
+    >
+      {icon}
+    </button>
+  );
+
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-lg transition-colors duration-200">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <Home className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              Analisis Suara
-            </h1>
+            {renderIconButton(
+              <Home className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
+              () => {},
+              "Beranda"
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setIsResetModalOpen(true)}
-              className="flex items-center px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
-            >
-              <RefreshCw size={18} className="mr-2" />
-              Reset
-            </button>
+            {renderIconButton(
+              <RefreshCw
+                size={20}
+                className={hasData ? "text-red-500" : "text-gray-400"}
+              />,
+              () => setIsResetModalOpen(true),
+              "Reset Data"
+            )}
 
-            <button
-              onClick={generateExcelTemplate}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Download Template"
-            >
-              <FileDown size={20} />
-            </button>
+            {renderIconButton(
+              <FileDown size={20} />,
+              generateExcelTemplate,
+              "Download Template"
+            )}
 
-            <button
-              onClick={() => setIsTutorialOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Tutorial"
-            >
-              <HelpCircle size={20} />
-            </button>
+            {renderIconButton(
+              <HelpCircle size={20} />,
+              () => setIsTutorialOpen(true),
+              "Tutorial"
+            )}
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title={theme === "dark" ? "Light Mode" : "Dark Mode"}
-            >
-              {theme === "dark" ? (
+            {renderIconButton(
+              theme === "dark" ? (
                 <Sun size={20} className="text-yellow-400" />
               ) : (
                 <Moon size={20} />
-              )}
-            </button>
+              ),
+              toggleTheme,
+              theme === "dark" ? "Light Mode" : "Dark Mode"
+            )}
           </div>
         </div>
       </div>
 
-      {/* Reset Modal */}
       <Modal
         isOpen={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
@@ -98,13 +93,12 @@ const Navbar = () => {
               onClick={handleReset}
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
             >
-              Reset
+              Ya, Reset Data
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* Tutorial Modal with updated content */}
       <Modal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}

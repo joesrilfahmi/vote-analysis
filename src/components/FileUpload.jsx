@@ -1,8 +1,11 @@
+// src/components/FileUpload.jsx
 import React, { useCallback, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
+import useVoteStore from "../store/useVoteStore";
 
-const FileUpload = ({ onFileUpload }) => {
+const FileUpload = () => {
+  const processExcelFile = useVoteStore((state) => state.processExcelFile);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,10 +26,10 @@ const FileUpload = ({ onFileUpload }) => {
           return;
         }
 
-        onFileUpload(file);
+        processExcelFile(file);
       }
     },
-    [onFileUpload]
+    [processExcelFile]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

@@ -1,61 +1,61 @@
-// src/components/Modal.jsx
-import React, { useState } from "react";
-import { X, Search } from "lucide-react";
+import React, { useEffect } from "react";
 
-const Modal = ({ isOpen, onClose, title, children, searchable, onSearch }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+const Modal = ({ isOpen, onClose, title, children }) => {
+  // Handle ESC key press to close modal
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
 
-  if (!isOpen) return null;
+    document.addEventListener("keydown", handleEscKey);
+    return () => document.removeEventListener("keydown", handleEscKey);
+  }, [isOpen, onClose]);
 
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    if (onSearch) {
-      onSearch(value);
+  // Handle clicking outside modal to close
+  const handleBackdropClick = (event) => {
+    if (event.target === event.currentTarget) {
+      onClose();
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        {searchable && (
-          <div className="p-4 border-b dark:border-gray-700">
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-              <input
-                type="text"
-                placeholder="Cari..."
-                value={searchQuery}
-                onChange={handleSearch}
-                className="w-full pl-10 pr-4 py-2 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
-              />
-            </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto bg-black bg-opacity-50"
+      onClick={handleBackdropClick}
+    >
+      <div className="relative w-full max-w-4xl mx-4 md:mx-auto">
+        <div className="relative flex flex-col w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {title}
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-1 ml-auto text-gray-400 hover:text-gray-500 focus:outline-none"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </div>
-        )}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {children}
-        </div>
-        <div className="p-4 border-t dark:border-gray-700 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-          >
-            Tutup
-          </button>
+
+          {/* Content */}
+          <div className="flex-1 p-6 overflow-y-auto">{children}</div>
         </div>
       </div>
     </div>
